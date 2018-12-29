@@ -10,6 +10,7 @@ repl:
 
 check:
 	cd src && ${IDRIS} --check ${MAIN}
+	@echo "All OK!"
 
 clean:
 	${IDRIS} --clean ${PKG}
