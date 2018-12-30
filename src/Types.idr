@@ -49,17 +49,55 @@ minusInt x y = x - y
 plusInt : Integer -> Integer -> Integer
 plusInt x y = x + y
 
-divInt : Integer -> Integer -> Integer
-divInt = ?divInt
+-- Arithmetic laws.
+
+congSubEq : (a, b, c : Integer) -> (a + b = c) -> (b = c - a)
+congSubEq a b c prf = really_believe_me a b c prf
+
+plusComm : (a, b : Integer) -> a + b = b + a
+plusComm a b = really_believe_me a b
+
+plusMinus : (a, b, c : Integer) -> a - b + c = a + c - b
+plusMinus a b c = really_believe_me a b c
+
+multComm : (a, b : Integer) -> a * b = b * a
+multComm a b = really_believe_me a b
+
+multDivComm : (a, b, c : Integer) -> (a * b) `div` c = a * (b `div` c)
+multDivComm a b c = really_believe_me a b c
+
+multPlusDistr : (a, b, c : Integer) -> (a + b) * c = (a * c) + (b * c)
+multPlusDistr a b c = really_believe_me a b c
+
+divPlusDistr : (a, b, c : Integer) -> (a + b) `div` c = a `div` c + b `div` c
+divPlusDistr a b c = really_believe_me a b c
+
+divEq : (a : Integer) -> a `div` a = 1
+divEq a = really_believe_me a
+
+multSubDistr : (a, b, c : Integer) -> a * (b - c) = (a * b) - (a * c)
+multSubDistr a b c = really_believe_me a b c
+
+multDivCancels : (a, b : Integer) -> (a * b) `div` b = a
+multDivCancels a b = really_believe_me a b 
+
+minusCancels : (a, b, c : Integer) -> a - (b - c) = a + c - b
+minusCancels a b c = really_believe_me a b c
+
+addSubCancels : (a, b : Integer) -> (a + b - b) = a
+addSubCancels a b = really_believe_me a b
+
+congPlus : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a + c <= b + c = True
+congPlus {a} {b} {c} prf = really_believe_me a b c prf
+
+congDiv : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a `div` c <= b `div` c = True
+congDiv {a} {b} {c} prf = really_believe_me a b c prf
 
 data GTEI : (n : Int) -> (m : Int) -> Type where
   GTEImpl : (n >= m = True) -> GTEI n m
 
 addCommutative : (x, y : Integer) -> x + y = y + x
 addCommutative x y = really_believe_me x y
-
-gteTransitive : {n : Int} -> {m : Int} -> {p: Int} -> (n >= m = True) -> (p >= n = True) -> (p >= m = True)
-gteTransitive ngtem pgten = really_believe_me ngtem pgten
 
 excludedMiddle : p `Either` Not p
 excludedMiddle {p} = really_believe_me p

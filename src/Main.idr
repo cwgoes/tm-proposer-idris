@@ -93,9 +93,72 @@ namespace TwoValidator
 
   final : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> -- TODO: initial inductive case
-    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * wA `divInt` (wB + wA)) `minusInt` 1) = True,
-     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * wA `divInt` (wB + wA)) `plusInt` 1) = True)
+    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * wA `div` (wB + wA)) `minusInt` 1) = True,
+     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * wA `div` (wB + wA)) `plusInt` 1) = True)
   final = ?final
+
+  reduceInequality : (wA, wB : ProposerWeight) -> (nA, nB, n : Integer) ->
+    (nA + nB = n) ->
+    ((((wB * nA) - (wA * nB)) <= (wA + wB)) = True) ->
+    (nA >= n * (wA `div` (wB + wA)) - 1 = True,
+     nA <= n * (wA `div` (wB + wA)) + 1 = True)
+  reduceInequality wA wB nA nB n neq lteq =
+    ?reduceInequality
+
+    where stepOne : (((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True
+          stepOne =
+            rewrite (sym (congSubEq nA nB n neq)) in
+            lteq
+
+          stepTwo : (((nA * wB) - ((wA * n) - (wA * nA))) <= (wA + wB)) = True
+          stepTwo =
+            rewrite multComm nA wB in
+            rewrite sym (multSubDistr wA n nA) in
+            stepOne
+
+          stepThree : (((nA * wB) + (nA * wA) - (wA * n)) <= (wA + wB)) = True
+          stepThree =
+            rewrite multComm nA wA in
+            rewrite (sym (minusCancels (nA * wB) (wA * n) (wA * nA))) in
+            stepTwo
+
+          stepFour : (((wB + wA) * nA - (wA * n)) <= (wA + wB)) = True
+          stepFour =
+            rewrite (multPlusDistr wB wA nA) in
+            rewrite multComm wA nA in
+            rewrite multComm wB nA in
+            stepThree
+
+          stepFive : (((wB + wA) * nA + (wA * n) - (wA * n)) <= (wA + wB) + (wA * n)) = True
+          stepFive =
+            rewrite (sym (plusMinus ((wB + wA) * nA) (wA * n) (wA * n))) in
+            congPlus stepFour
+
+          stepSix : (((wB + wA) * nA) <= (wA + wB) + (wA * n)) = True
+          stepSix =
+            rewrite (sym (addSubCancels ((wB + wA) * nA) (wA * n))) in
+            stepFive
+
+          stepSeven : (((wA + wB) * nA) <= (wA + wB) + (wA * n)) = True
+          stepSeven = replace {P = \x => x * nA <= (wA + wB) + (wA * n) = True} (plusComm wB wA) stepSix
+
+          stepEight : ((nA * (wA + wB)) <= (wA + wB) + (wA * n)) = True
+          stepEight = rewrite multComm nA (wA + wB) in stepSeven
+
+          stepNine : ((nA * (wA + wB) `div` (wA + wB)) <= ((wA + wB) + (wA * n)) `div` (wA + wB)) = True
+          stepNine = congDiv stepEight
+
+          stepTen : nA <= (((wA + wB) + (wA * n)) `div` (wA + wB)) = True
+          stepTen = rewrite (sym (multDivCancels nA (wA + wB))) in stepNine
+
+          stepEleven : nA <= (n * (wA `div` (wA + wB))) + 1 = True
+          stepEleven =
+            rewrite plusComm (n * (wA `div` (wA + wB))) 1 in
+            rewrite (sym (multDivComm n wA (wA + wB))) in
+            rewrite multComm n wA in
+            rewrite (sym (divEq (wA + wB))) in
+            rewrite (sym (divPlusDistr (wA + wB) (wA * n) (wA + wB))) in
+            stepTen
 
   -- Then: abs (2 * wB * nA) - (2 * wA * nB) <= 2*wA + 2*wB
   -- wB * nA - wA * nB <= wA + wB
@@ -111,31 +174,4 @@ namespace TwoValidator
   -- (wA / (wB + wA)) - 1/n <= nA / n <= (wA / (wB + wA)) + 1/n
   -- QED
 
-{- TODO n-validator case -}
-
-{-
-
-namespace ManyValidator
-
-  incrementElect : ElectionState -> (ElectionState, ProposerId)
-  incrementElect state =
-    let updated = map (\(index, weight, priority) => (index, weight, priority + weight)) state
-        sorted      = updated -- TODO
-        proposer    = head { ok = sortedNonEmpty } sorted
-    in (alterPriority (totalWeight state) proposer :: tail { ok = sortedNonEmpty } sorted, fst3 proposer)
-
-    where
-      sortedNonEmpty : NonEmpty sorted
-      sortedNonEmpty = ?sortedNonEmpty
-
-      alterPriority : Int -> (ProposerId, ProposerWeight, ProposerPriority) -> (ProposerId, ProposerWeight, ProposerPriority)
-      alterPriority diff (id, weight, priority) = (id, weight, priority - diff)
-
-  incrementElectMany : (n : Nat) -> (s : ElectionState) -> (ElectionState, List ProposerId)
-  incrementElectMany Z      state = (state, [])
-  incrementElectMany (S n)  state =
-    let (newState, result)    = incrementElect state
-        (finalState, results) = incrementElectMany n newState
-    in (finalState, result :: results)
-
--}
+{- TODO n-validator case, preferably just via an equivalence proof from the 2-validator case. -}
