@@ -72,8 +72,8 @@ namespace TwoValidator
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n: Nat) ->
     (ns ** (n = fst ns + snd ns,
       fst ns = count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))),
-      snd ns = count idB (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))
-      --diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))) = (2 * wB * fst ns) - (2 * wA * snd ns)
+      snd ns = count idB (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))),
+      diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))) = (2 * wB * natToInteger (fst ns)) - (2 * wA * natToInteger (snd ns))
       ))
   totalDiff idA idB wA wB pA pB n = ?totalDiff
 
@@ -93,8 +93,8 @@ namespace TwoValidator
 
   fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> -- TODO: initial inductive case
-    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * wA `div` (wB + wA)) - 1) = True,
-     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * wA `div` (wB + wA)) + 1) = True)
+    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
+     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
   fairlyProportional = ?fairlyProportional
 
   reduceHelper : (wA, wB : ProposerWeight) -> (nA, n : Integer) ->
