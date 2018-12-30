@@ -91,87 +91,138 @@ namespace TwoValidator
     -> (abs (diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
   diffDiffMany = ?diffDiffMany
 
-  final : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
+  fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> -- TODO: initial inductive case
-    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * wA `div` (wB + wA)) `minusInt` 1) = True,
-     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * wA `div` (wB + wA)) `plusInt` 1) = True)
-  final = ?final
+    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * wA `div` (wB + wA)) - 1) = True,
+     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * wA `div` (wB + wA)) + 1) = True)
+  fairlyProportional = ?fairlyProportional
+
+  reduceHelper : (wA, wB : ProposerWeight) -> (nA, n : Integer) ->
+    ((((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True) ->
+    nA <= (n * (wA `div` (wA + wB))) + 1 = True
+  reduceHelper wA wB nA n initial =
+    stepEleven
+    where
+      stepTwo : (((nA * wB) - ((wA * n) - (wA * nA))) <= (wA + wB)) = True
+      stepTwo =
+        rewrite multComm nA wB in
+        rewrite sym (multSubDistr wA n nA) in
+        initial
+
+      stepThree : (((nA * wB) + (nA * wA) - (wA * n)) <= (wA + wB)) = True
+      stepThree =
+        rewrite multComm nA wA in
+        rewrite (sym (minusCancels (nA * wB) (wA * n) (wA * nA))) in
+        stepTwo
+
+      stepFour : (((wB + wA) * nA - (wA * n)) <= (wA + wB)) = True
+      stepFour =
+        rewrite (multPlusDistr wB wA nA) in
+        rewrite multComm wA nA in
+        rewrite multComm wB nA in
+        stepThree
+
+      stepFive : (((wB + wA) * nA + (wA * n) - (wA * n)) <= (wA + wB) + (wA * n)) = True
+      stepFive =
+        rewrite (sym (plusMinus ((wB + wA) * nA) (wA * n) (wA * n))) in
+        congPlus stepFour
+
+      stepSix : (((wB + wA) * nA) <= (wA + wB) + (wA * n)) = True
+      stepSix =
+        rewrite (sym (addSubCancels ((wB + wA) * nA) (wA * n))) in
+        stepFive
+
+      stepSeven : (((wA + wB) * nA) <= (wA + wB) + (wA * n)) = True
+      stepSeven = replace {P = \x => x * nA <= (wA + wB) + (wA * n) = True} (plusComm wB wA) stepSix
+
+      stepEight : ((nA * (wA + wB)) <= (wA + wB) + (wA * n)) = True
+      stepEight = rewrite multComm nA (wA + wB) in stepSeven
+
+      stepNine : ((nA * (wA + wB) `div` (wA + wB)) <= ((wA + wB) + (wA * n)) `div` (wA + wB)) = True
+      stepNine = congDiv stepEight
+
+      stepTen : nA <= (((wA + wB) + (wA * n)) `div` (wA + wB)) = True
+      stepTen = rewrite (sym (multDivCancels nA (wA + wB))) in stepNine
+
+      stepEleven : nA <= (n * (wA `div` (wA + wB))) + 1 = True
+      stepEleven =
+        rewrite plusComm (n * (wA `div` (wA + wB))) 1 in
+        rewrite (sym (multDivComm n wA (wA + wB))) in
+        rewrite multComm n wA in
+        rewrite (sym (divEq (wA + wB))) in
+        rewrite (sym (divPlusDistr (wA + wB) (wA * n) (wA + wB))) in
+        stepTen
 
   reduceInequality : (wA, wB : ProposerWeight) -> (nA, nB, n : Integer) ->
     (nA + nB = n) ->
-    ((((wB * nA) - (wA * nB)) <= (wA + wB)) = True) ->
-    (nA >= n * (wA `div` (wB + wA)) - 1 = True,
-     nA <= n * (wA `div` (wB + wA)) + 1 = True)
-  reduceInequality wA wB nA nB n neq lteq =
-    ?reduceInequality
+    ((abs ((wB * nA) - (wA * nB)) <= (wA + wB)) = True) ->
+    (nA >= (n * (wA `div` (wA + wB))) - 1 = True,
+     nA <= (n * (wA `div` (wA + wB))) + 1 = True)
+  reduceInequality wA wB nA nB n neq abslt =
+    (first, second)
 
-    where stepOne : (((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True
-          stepOne =
+    where lteqA : ((wB * nA) - (wA * nB)) <= (wA + wB) = True
+          lteqA = fst (splitAbs abslt)
+
+          lteqB : ((wA * nB) - (wB * nA)) <= (wA + wB) = True
+          lteqB = snd (splitAbs abslt)
+
+          initialForA : (((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True
+          initialForA =
             rewrite (sym (congSubEq nA nB n neq)) in
-            lteq
+            lteqA
 
-          stepTwo : (((nA * wB) - ((wA * n) - (wA * nA))) <= (wA + wB)) = True
-          stepTwo =
-            rewrite multComm nA wB in
-            rewrite sym (multSubDistr wA n nA) in
-            stepOne
+          initialForB : (((wA * nB) - (wB * (n - nB))) <= (wB + wA)) = True
+          initialForB =
+            rewrite plusComm wB wA in
+            rewrite (sym (congSubEq nB nA n (rewrite plusComm nB nA in neq))) in
+            lteqB
 
-          stepThree : (((nA * wB) + (nA * wA) - (wA * n)) <= (wA + wB)) = True
-          stepThree =
-            rewrite multComm nA wA in
-            rewrite (sym (minusCancels (nA * wB) (wA * n) (wA * nA))) in
-            stepTwo
+          finalForB : nB <= (n * (wB `div` (wB + wA))) + 1 = True
+          finalForB = reduceHelper wB wA nB n initialForB
 
-          stepFour : (((wB + wA) * nA - (wA * n)) <= (wA + wB)) = True
-          stepFour =
-            rewrite (multPlusDistr wB wA nA) in
-            rewrite multComm wA nA in
-            rewrite multComm wB nA in
-            stepThree
+          lemma1 : n - nA <= (n * (wB `div` (wB + wA))) + 1 = True
+          lemma1 = rewrite (sym (congSubEq nA nB n neq)) in finalForB
 
-          stepFive : (((wB + wA) * nA + (wA * n) - (wA * n)) <= (wA + wB) + (wA * n)) = True
-          stepFive =
-            rewrite (sym (plusMinus ((wB + wA) * nA) (wA * n) (wA * n))) in
-            congPlus stepFour
+          lemma2 : nA - n >= -((n * (wB `div` (wB + wA))) + 1) = True
+          lemma2 = congNegSwap lemma1
 
-          stepSix : (((wB + wA) * nA) <= (wA + wB) + (wA * n)) = True
-          stepSix =
-            rewrite (sym (addSubCancels ((wB + wA) * nA) (wA * n))) in
-            stepFive
+          lemma3 : nA >= -((n * (wB `div` (wB + wA))) + 1) + n = True
+          lemma3 = rewrite (sym (addSubCancels' nA n)) in congPlus' lemma2
 
-          stepSeven : (((wA + wB) * nA) <= (wA + wB) + (wA * n)) = True
-          stepSeven = replace {P = \x => x * nA <= (wA + wB) + (wA * n) = True} (plusComm wB wA) stepSix
+          lemma4 : nA >= -((n * ((wB + wA - wA) `div` (wB + wA))) + 1) + n = True
+          lemma4 = rewrite addSubCancels wB wA in lemma3
 
-          stepEight : ((nA * (wA + wB)) <= (wA + wB) + (wA * n)) = True
-          stepEight = rewrite multComm nA (wA + wB) in stepSeven
+          lemma5 : nA >= -((n * ((wB + wA) `div` (wB + wA) - (wA `div` (wB + wA)))) + 1) + n = True
+          lemma5 = rewrite (sym (divSubDistr (wB + wA) wA (wB + wA))) in lemma4
 
-          stepNine : ((nA * (wA + wB) `div` (wA + wB)) <= ((wA + wB) + (wA * n)) `div` (wA + wB)) = True
-          stepNine = congDiv stepEight
+          lemma6 : nA >= -((n * (1 - (wA `div` (wB + wA)))) + 1) + n = True
+          lemma6 = replace {P = \x => nA >= -((n * (x - (wA `div` (wB + wA)))) + 1) + n = True} (divEq (wB + wA)) lemma5
 
-          stepTen : nA <= (((wA + wB) + (wA * n)) `div` (wA + wB)) = True
-          stepTen = rewrite (sym (multDivCancels nA (wA + wB))) in stepNine
+          lemma7 : nA >= -(n * (1 - (wA `div` (wB + wA)))) + (-1) + n = True
+          lemma7 =
+            rewrite (sym (negDistr (n * (1 - (wA `div` (wB + wA)))) 1)) in lemma6
 
-          stepEleven : nA <= (n * (wA `div` (wA + wB))) + 1 = True
-          stepEleven =
-            rewrite plusComm (n * (wA `div` (wA + wB))) 1 in
-            rewrite (sym (multDivComm n wA (wA + wB))) in
-            rewrite multComm n wA in
-            rewrite (sym (divEq (wA + wB))) in
-            rewrite (sym (divPlusDistr (wA + wB) (wA * n) (wA + wB))) in
-            stepTen
+          lemma8 : nA >= -((n * 1) - (n * (wA `div` (wB + wA)))) + (-1) + n = True
+          lemma8 =
+            rewrite (sym (multSubDistr n 1 (wA `div` (wB + wA)))) in
+            lemma7
 
-  -- Then: abs (2 * wB * nA) - (2 * wA * nB) <= 2*wA + 2*wB
-  -- wB * nA - wA * nB <= wA + wB
-  -- wB * nA - wA * (n - nA) <= wA + wB
-  -- wB * (nA / n) - wA * (1 - nA/n) <= wA + wB / n
-  -- (wB + wA) (nA / n) <= (wA + wB) / n + wA
-  -- nA / n <= 1 / n + (wA / (wB + wA))
-  -- and similarly, nB / n <= 1 / n + (wB / (wB + wA))
-  -- thus (n - nA) / n <= 1 / n + (wB / (wB + wA))
-  -- nA / n - 1 >= - (1 / n + (wB / (wB + wA)))
-  -- nA / n >= 1 - 1/n - (wB / (wB + wA))
-  -- 1 - 1/n - (wB / (wB + wA)) <= nA / n <= 1 / n + (wA / (wB + wA))
-  -- (wA / (wB + wA)) - 1/n <= nA / n <= (wA / (wB + wA)) + 1/n
-  -- QED
+          lemma9 : nA >= -(n - (n * (wA `div` (wB + wA)))) + (-1) + n = True
+          lemma9 = replace {P = \x => nA >= -(x - (n * (wA `div` (wB + wA)))) + (-1) + n = True} (mulByOne n) lemma8
+
+          lemma10 : nA >= (n * (wA `div` (wB + wA))) - n - 1 + n = True
+          lemma10 =
+            rewrite (sym (plusNeg ((n * (wA `div` (wB + wA))) - n) 1)) in
+            rewrite (sym (negSubDistr n (n * (wA `div` (wB + wA))))) in lemma9
+
+          lemma11 : nA >= (n * (wA `div` (wB + wA))) - 1 = True
+          lemma11 = rewrite (sym (plusAssocElim (n * (wA `div` (wB + wA))) n 1)) in lemma10
+
+          first : nA >= (n * (wA `div` (wA + wB))) - 1 = True
+          first = rewrite (plusComm wA wB) in lemma11
+
+          second : nA <= (n * (wA `div` (wA + wB))) + 1 = True
+          second = reduceHelper wA wB nA n initialForA
 
 {- TODO n-validator case, preferably just via an equivalence proof from the 2-validator case. -}

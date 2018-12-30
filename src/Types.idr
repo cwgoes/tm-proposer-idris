@@ -60,11 +60,26 @@ plusComm a b = really_believe_me a b
 plusMinus : (a, b, c : Integer) -> a - b + c = a + c - b
 plusMinus a b c = really_believe_me a b c
 
+plusNeg : (a, b : Integer) -> a + (-b) = a - b
+plusNeg a b = really_believe_me a b
+
 multComm : (a, b : Integer) -> a * b = b * a
 multComm a b = really_believe_me a b
 
 multDivComm : (a, b, c : Integer) -> (a * b) `div` c = a * (b `div` c)
 multDivComm a b c = really_believe_me a b c
+
+negDistr : (a, b : Integer) -> -(a + b) = -a + -b
+negDistr a b = really_believe_me a b
+
+negSubDistr : (a, b : Integer) -> -(a - b) = b - a
+negSubDistr a b = really_believe_me a b
+
+plusAssocElim : (a, b, c : Integer) -> a - b - c + b = a - c
+plusAssocElim a b c = really_believe_me a b c
+
+mulByOne : (n : Integer) -> n * 1 = n
+mulByOne n = really_believe_me n
 
 multPlusDistr : (a, b, c : Integer) -> (a + b) * c = (a * c) + (b * c)
 multPlusDistr a b c = really_believe_me a b c
@@ -72,8 +87,17 @@ multPlusDistr a b c = really_believe_me a b c
 divPlusDistr : (a, b, c : Integer) -> (a + b) `div` c = a `div` c + b `div` c
 divPlusDistr a b c = really_believe_me a b c
 
+divSubDistr : (a, b, c : Integer) -> (a - b) `div` c = a `div` c - b `div` c
+divSubDistr a b c = really_believe_me a b c
+
 divEq : (a : Integer) -> a `div` a = 1
 divEq a = really_believe_me a
+
+divEqNeg : (a : Integer) -> -a `div` a = -1
+divEqNeg a = really_believe_me a
+
+plusMinusSimpl : (a : Integer, b : Integer) -> a + (-b) = a - b
+plusMinusSimpl a b = really_believe_me a b
 
 multSubDistr : (a, b, c : Integer) -> a * (b - c) = (a * b) - (a * c)
 multSubDistr a b c = really_believe_me a b c
@@ -87,14 +111,26 @@ minusCancels a b c = really_believe_me a b c
 addSubCancels : (a, b : Integer) -> (a + b - b) = a
 addSubCancels a b = really_believe_me a b
 
+addSubCancels' : (a, b : Integer) -> (a - b + b) = a
+addSubCancels' a b = really_believe_me a b
+
 congPlus : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a + c <= b + c = True
 congPlus {a} {b} {c} prf = really_believe_me a b c prf
+
+congPlus' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = True -> a + c >= b + c = True
+congPlus' {a} {b} {c} prf = really_believe_me a b c prf
 
 congDiv : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a `div` c <= b `div` c = True
 congDiv {a} {b} {c} prf = really_believe_me a b c prf
 
-data GTEI : (n : Int) -> (m : Int) -> Type where
-  GTEImpl : (n >= m = True) -> GTEI n m
+congDiv' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = True -> a `div` c >= b `div` c = True
+congDiv' {a} {b} {c} prf = really_believe_me a b c prf
+
+congNegSwap : {a : Integer} -> {b : Integer} -> {c : Integer} -> (a - b) <= c = True -> (b - a) >= -c = True
+congNegSwap {a} {b} {c} prf = really_believe_me a b c prf
+
+splitAbs : {a : Integer} -> {b : Integer} -> {c: Integer} -> abs (a - b) <= c = True -> (a - b <= c = True, b - a <= c = True)
+splitAbs {a} {b} {c} prf = really_believe_me a b c prf
 
 addCommutative : (x, y : Integer) -> x + y = y + x
 addCommutative x y = really_believe_me x y
