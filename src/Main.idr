@@ -131,18 +131,49 @@ namespace TwoValidator
     -> (abs (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
   diffDiff idA idB wA wB pA pB prf =
     case excludedBool ((pA + wA) >= (pB + wB)) of
-      Left prf => ?diffDiffRight
-      Right prf => ?diffDiffRight
+      Left prf' =>
+        rewrite leftCase prf' in
+        rewrite leftFinal in
+        Refl
+      Right prf' =>
+        rewrite rightCase prf' in
+        rewrite rightFinal in
+        Refl
 
   where
     helper1 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) >= (wB - wA) = True
     helper1 = ?helper1
 
-    -- pA' + 2 * wB - pB' >= wB - wA = True
-    -- pA' - pB' >= -wB - wA = True
-    -- pB' - pA' <= wA + wB = True
-    -- (could be negative)
-    -- start from other direction
+    leftCase : ((pA + wA) >= (pB + wB) = True) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB - 2 * wB)
+    leftCase = ?leftCase
+
+    -- abs (x - y) <= z
+    -- >> -z < x - y < z
+
+    -- >> want to prove : -2 wA < (pA - pB) < 2 wA + 4 wB
+    -- can prove upper bound by abs
+    -- lower bound: have: pA - pB >= wB - wA >> pA - pB >= -wA
+
+    leftLowerBound : (pA - pB - 2 * wB) >= -(2 * wA + 2 * wB) = True
+    leftLowerBound = ?leftLowerBound
+
+    leftUpperBound : (pA - pB - 2 * wB) <= (2 * wA + 2 * wB) = True
+    leftUpperBound = ?leftUpperBound
+
+    leftFinal : abs (pA - pB - 2 * wB) <= (2 * wA + 2 * wB) = True
+    leftFinal = joinAbs (leftLowerBound, leftUpperBound)
+
+    rightCase : ((pA + wA) >= (pB + wB) = False) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB + 2 * wA)
+    rightCase = ?rightCase
+
+    rightLowerBound : (pA - pB + 2 * wA) >= -(2 * wA + 2 * wB) = True
+    rightLowerBound = ?rightLowerBound
+
+    rightUpperBound : (pA - pB + 2 * wA) <= (2 * wA + 2 * wB) = True
+    rightUpperBound = ?rightUpperBound
+
+    rightFinal : abs (pA - pB + 2 * wA) <= (2 * wA + 2 * wB) = True
+    rightFinal = joinAbs (rightLowerBound, rightUpperBound)
 
     helper2 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) < (wA - wB) = True
     helper2 = ?helper2
@@ -152,7 +183,36 @@ namespace TwoValidator
   diffDiffMany : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs (pA - pB) <= (2*wA + 2*wB) = True)
     -> (abs (diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
-  diffDiffMany = ?diffDiffMany
+  diffDiffMany idA idB wA wB pA pB Z prf = prf
+  diffDiffMany idA idB wA wB pA pB (S k) prf =
+    rewrite applies in
+    rewrite step in
+    Refl
+    where
+      state : ElectionState
+      state = ((idA, wA, pA), (idB, wB, pB))
+
+      kstate : ElectionState
+      kstate = (fst (incrementElectMany k state))
+
+      inductive : (abs (diffPriority kstate)) <= (2*wA + 2*wB) = True
+      inductive = diffDiffMany idA idB wA wB pA pB k prf
+
+      wAConserved : {s : ElectionState, n : Nat} -> snd3 (fst (fst (incrementElectMany n s))) = snd3 (fst s)
+      wAConserved = ?wAConserved
+
+      wBConserved : {s : ElectionState, n : Nat} -> snd3 (snd (fst (incrementElectMany n s))) = snd3 (snd s)
+      wBConserved = ?wBConserved
+
+      inductive' : (abs (diffPriority kstate)) <= (2 * (snd3 (fst kstate)) + 2 * (snd3 (snd kstate))) = True
+      inductive' = ?inductive'
+      --inductive' = rewrite (sym (wAConserved {n=k})) in rewrite (sym wBConserved {n=k}) in rewrite inductive in Refl
+
+      applies : fst (incrementElectMany (S k) state) = fst (incrementElect kstate)
+      applies = incrementElectManyApplies k state
+
+      step : (abs (diffPriority (fst (incrementElect kstate))) <= (2*wA + 2*wB) = True)
+      step = ?step --let ((idA', wA', pA'), (idB', wB', pB')) = kstate in diffDiff idA' idB' wA' wB' pA' pB' ?todo
 
   -- This function just simplifies the inequality to an upper bound on nA.
   reduceHelper : (wA, wB : ProposerWeight) -> (nA, n : Integer) ->

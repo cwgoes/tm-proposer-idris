@@ -147,8 +147,11 @@ congDiv' {a} {b} {c} prf = really_believe_me a b c prf
 congNegSwap : {a : Integer} -> {b : Integer} -> {c : Integer} -> (a - b) <= c = True -> (b - a) >= -c = True
 congNegSwap {a} {b} {c} prf = really_believe_me a b c prf
 
-splitAbs : {a : Integer} -> {b : Integer} -> {c: Integer} -> abs (a - b) <= c = True -> (a - b <= c = True, b - a <= c = True)
+splitAbs : {a : Integer} -> {b : Integer} -> {c : Integer} -> abs (a - b) <= c = True -> (a - b <= c = True, b - a <= c = True)
 splitAbs {a} {b} {c} prf = really_believe_me a b c prf
+
+joinAbs : {a : Integer} -> {b : Integer} -> (a >= -b = True, a <= b = True) -> abs a <= b = True
+joinAbs {a} {b} (p, p') = really_believe_me a b p p'
 
 addCommutative : (x, y : Integer) -> x + y = y + x
 addCommutative x y = really_believe_me x y
