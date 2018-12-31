@@ -5,13 +5,14 @@ Formal verification of fairness of the [Tendermint](https://github.com/tendermin
 In particular, the Idris source in this repository proves that maximally strict bounds on stake-proportionality of proposer election hold over an epoch of any length with no power changes by inhabiting the following type:
 
 ```idris
-fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) ->
+fairlyProportional :
+  (idA : ProposerId) -> (idB : ProposerId) ->
   (wA : ProposerWeight) -> (wB : ProposerWeight) ->
-  (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs (pA - pB) <= (wA + wB)) ->
-  ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))))
-    >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
-   (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))))
-    <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
+  (pA : ProposerPriority) -> (pB: ProposerPriority) ->
+  (n : Nat) ->
+  (abs(pA - pB) <= (2*wA + 2*wB) = True) ->
+  ((count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((n * (wA / (wA + wB))) - 1) = True,
+   (count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((n * (wA / (wA + wB))) + 1) = True)
 ```
 
 where `incrementElectMany` repeats the proposer-election function and returns the list of elected proposers.

@@ -354,9 +354,28 @@ namespace TwoValidator
       second = reduceHelper wA wB nA n initialForA
 
   fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
-    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> -- TODO: initial inductive case
+    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs(pA - pB) <= (2*wA + 2*wB) = True) ->
     ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
      (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
-  fairlyProportional = ?fairlyProportional
+  fairlyProportional idA idB wA wB pA pB n initial =
+    let ((nA, nB) ** (neq, nAeq, nBeq, diffEq)) = totalDiff idA idB wA wB pA pB n in
+    rewrite (sym nAeq) in
+    let lemma1 = the (abs (2 * wA * (natToInteger nB) - 2 * wB * (natToInteger nA)) <= 2*wA + 2*wB = True) (rewrite (sym diffEq) in diffDiffBound)
+        lemma2 = leAcrossAbsMul {a=2} {b=wA * natToInteger nB} {c=wB * natToInteger nA} {d=wA} {e=wB} (rewrite multDistr3 2 wA (natToInteger nB) in rewrite multDistr3 2 wB (natToInteger nA) in lemma1)
+        lemma3 = the ((abs ((wB * natToInteger nA) - (wA * natToInteger nB)) <= (wA + wB)) = True) (rewrite (absNeg {a = (wB * natToInteger nA)} {b = (wA * natToInteger nB)}) in lemma2) in
+    let (f, s) = (reduceInequality wA wB (natToInteger nA) (natToInteger nB) (natToInteger n) (sym $ convEq neq) lemma3) in
+    (f, s)
+
+    where
+      state : ElectionState
+      state = ((idA, wA, pA), (idB, wB, pB))
+
+      diffBound : (abs (diffPriority (fst (incrementElectMany n state))) <= (2*wA + 2*wB) = True)
+      diffBound = diffDiffMany idA idB wA wB pA pB n initial
+
+      -- TODO Is the type of `diffDiffMany` right?
+
+      diffDiffBound : (abs (diffPriority (fst (incrementElectMany n state)) - diffPriority state) <= (2*wA + 2*wB) = True)
+      diffDiffBound = ?diffDiffBound
 
 {- TODO n-validator case, preferably just via an equivalence proof from the 2-validator case. -}

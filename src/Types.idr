@@ -132,6 +132,9 @@ addSubCancels' a b = really_believe_me a b
 addSubSingle : (a : Integer) -> (a - a) = 0
 addSubSingle a = really_believe_me a
 
+convEq : {a : Nat} -> {b : Nat} -> {c : Nat} -> (a = b + c) -> (natToInteger a = natToInteger b + natToInteger c)
+convEq {a} {b} {c} prf = really_believe_me a b c prf
+
 congPlus : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a + c <= b + c = True
 congPlus {a} {b} {c} prf = really_believe_me a b c prf
 
@@ -152,6 +155,15 @@ splitAbs {a} {b} {c} prf = really_believe_me a b c prf
 
 joinAbs : {a : Integer} -> {b : Integer} -> (a >= -b = True, a <= b = True) -> abs a <= b = True
 joinAbs {a} {b} (p, p') = really_believe_me a b p p'
+
+absNeg : {a : Integer} -> {b : Integer} -> abs (a - b) = abs (b - a)
+absNeg {a} {b} = really_believe_me a b
+
+leAcrossAbsMul : {a : Integer} -> {b : Integer} -> {c : Integer} -> {d : Integer} -> {e : Integer} -> abs (a * b - a * c) <= (a * d) + (a * e) = True -> abs (b - c) <= d + e = True
+leAcrossAbsMul {a} {b} {c} {d} {e} prf = really_believe_me a b c d e prf
+
+multDistr3 : (a, b, c : Integer) -> a * (b * c) = (a * b) * c
+multDistr3 a b c = really_believe_me a b c
 
 addCommutative : (x, y : Integer) -> x + y = y + x
 addCommutative x y = really_believe_me x y
