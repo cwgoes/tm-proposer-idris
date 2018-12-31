@@ -1,6 +1,6 @@
 package tm-proposer-idris
 
-brief       = "Tendermint proposer election"
+brief       = "Formal verification of Tendermint proposer election fairness"
 readme      = README.md
 license     = GPL3
 sourceloc   = git://git@github.com:cwgoes/tm-proposer-idris.git
