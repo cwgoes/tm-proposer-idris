@@ -127,8 +127,8 @@ namespace TwoValidator
   -- Prove: total diff over n calls, total diff = 2 wB nA - 2 wA nB
 
   diffDiff : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
-    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (abs (pA - pB) <= (2*wA + 2*wB) = True)
-    -> (abs (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
+    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (abs (pA - pB) <= (wA + wB) = True)
+    -> (abs (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB))))) <= (wA + wB) = True)
   diffDiff idA idB wA wB pA pB prf =
     case excludedBool ((pA + wA) >= (pB + wB)) of
       Left prf' =>
@@ -147,6 +147,11 @@ namespace TwoValidator
     leftCase : ((pA + wA) >= (pB + wB) = True) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB - 2 * wB)
     leftCase = ?leftCase
 
+    -- abs (pA - pB) <= (wA + wB)
+    -- either
+    -- pA + wA >= pB + wB ->> pA >= pB + wB - wA
+    -- ->>
+
     -- abs (x - y) <= z
     -- >> -z < x - y < z
 
@@ -154,25 +159,25 @@ namespace TwoValidator
     -- can prove upper bound by abs
     -- lower bound: have: pA - pB >= wB - wA >> pA - pB >= -wA
 
-    leftLowerBound : (pA - pB - 2 * wB) >= -(2 * wA + 2 * wB) = True
+    leftLowerBound : (pA - pB - 2 * wB) >= -(wA + wB) = True
     leftLowerBound = ?leftLowerBound
 
-    leftUpperBound : (pA - pB - 2 * wB) <= (2 * wA + 2 * wB) = True
+    leftUpperBound : (pA - pB - 2 * wB) <= (wA + wB) = True
     leftUpperBound = ?leftUpperBound
 
-    leftFinal : abs (pA - pB - 2 * wB) <= (2 * wA + 2 * wB) = True
+    leftFinal : abs (pA - pB - 2 * wB) <= (wA + wB) = True
     leftFinal = joinAbs (leftLowerBound, leftUpperBound)
 
     rightCase : ((pA + wA) >= (pB + wB) = False) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB + 2 * wA)
     rightCase = ?rightCase
 
-    rightLowerBound : (pA - pB + 2 * wA) >= -(2 * wA + 2 * wB) = True
+    rightLowerBound : (pA - pB + 2 * wA) >= -(wA + wB) = True
     rightLowerBound = ?rightLowerBound
 
-    rightUpperBound : (pA - pB + 2 * wA) <= (2 * wA + 2 * wB) = True
+    rightUpperBound : (pA - pB + 2 * wA) <= (wA + wB) = True
     rightUpperBound = ?rightUpperBound
 
-    rightFinal : abs (pA - pB + 2 * wA) <= (2 * wA + 2 * wB) = True
+    rightFinal : abs (pA - pB + 2 * wA) <= (wA + wB) = True
     rightFinal = joinAbs (rightLowerBound, rightUpperBound)
 
     helper2 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) < (wA - wB) = True
@@ -181,8 +186,8 @@ namespace TwoValidator
   -- Prove: maximum bound on diff in incrementElectMany calls by induction
 
   diffDiffMany : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
-    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs (pA - pB) <= (2*wA + 2*wB) = True)
-    -> (abs (diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
+    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs (pA - pB) <= (wA + wB) = True)
+    -> (abs (diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= (wA + wB) = True)
   diffDiffMany idA idB wA wB pA pB Z prf = prf
   diffDiffMany idA idB wA wB pA pB (S k) prf =
     rewrite applies in
@@ -195,7 +200,7 @@ namespace TwoValidator
       kstate : ElectionState
       kstate = (fst (incrementElectMany k state))
 
-      inductive : (abs (diffPriority kstate)) <= (2*wA + 2*wB) = True
+      inductive : (abs (diffPriority kstate)) <= (wA + wB) = True
       inductive = diffDiffMany idA idB wA wB pA pB k prf
 
       wAConserved : {s : ElectionState, n : Nat} -> snd3 (fst (fst (incrementElectMany n s))) = snd3 (fst s)
@@ -204,14 +209,14 @@ namespace TwoValidator
       wBConserved : {s : ElectionState, n : Nat} -> snd3 (snd (fst (incrementElectMany n s))) = snd3 (snd s)
       wBConserved = ?wBConserved
 
-      inductive' : (abs (diffPriority kstate)) <= (2 * (snd3 (fst kstate)) + 2 * (snd3 (snd kstate))) = True
+      inductive' : (abs (diffPriority kstate)) <= ((snd3 (fst kstate)) + (snd3 (snd kstate))) = True
       inductive' = ?inductive'
       --inductive' = rewrite (sym (wAConserved {n=k})) in rewrite (sym wBConserved {n=k}) in rewrite inductive in Refl
 
       applies : fst (incrementElectMany (S k) state) = fst (incrementElect kstate)
       applies = incrementElectManyApplies k state
 
-      step : (abs (diffPriority (fst (incrementElect kstate))) <= (2*wA + 2*wB) = True)
+      step : (abs (diffPriority (fst (incrementElect kstate))) <= (wA + wB) = True)
       step = ?step --let ((idA', wA', pA'), (idB', wB', pB')) = kstate in diffDiff idA' idB' wA' wB' pA' pB' ?todo
 
   -- This function just simplifies the inequality to an upper bound on nA.
@@ -354,7 +359,7 @@ namespace TwoValidator
       second = reduceHelper wA wB nA n initialForA
 
   fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
-    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs(pA - pB) <= (2*wA + 2*wB) = True) ->
+    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs(pA - pB) <= (wA + wB) = True) ->
     ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
      (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
   fairlyProportional idA idB wA wB pA pB n initial =
@@ -370,12 +375,10 @@ namespace TwoValidator
       state : ElectionState
       state = ((idA, wA, pA), (idB, wB, pB))
 
-      diffBound : (abs (diffPriority (fst (incrementElectMany n state))) <= (2*wA + 2*wB) = True)
+      diffBound : (abs (diffPriority (fst (incrementElectMany n state))) <= (wA + wB) = True)
       diffBound = diffDiffMany idA idB wA wB pA pB n initial
 
-      -- TODO Is the type of `diffDiffMany` right?
-
       diffDiffBound : (abs (diffPriority (fst (incrementElectMany n state)) - diffPriority state) <= (2*wA + 2*wB) = True)
-      diffDiffBound = ?diffDiffBound
+      diffDiffBound = rewrite (sym $ multAddDistr 2 wA wB) in absSubBound diffBound initial
 
 {- TODO n-validator case, preferably just via an equivalence proof from the 2-validator case. -}

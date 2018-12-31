@@ -10,9 +10,11 @@ fairlyProportional :
   (wA : ProposerWeight) -> (wB : ProposerWeight) ->
   (pA : ProposerPriority) -> (pB: ProposerPriority) ->
   (n : Nat) ->
-  (abs(pA - pB) <= (2*wA + 2*wB) = True) ->
-  ((count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((n * (wA / (wA + wB))) - 1) = True,
-   (count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((n * (wA / (wA + wB))) + 1) = True)
+  (abs(pA - pB) <= (wA + wB) = True) ->
+  ((count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))))
+      >= ((n * (wA / (wA + wB))) - 1) = True,
+   (count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))))
+      <= ((n * (wA / (wA + wB))) + 1) = True)
 ```
 
 where `incrementElectMany` repeats the proposer-election function and returns the list of elected proposers.

@@ -108,6 +108,9 @@ plusMinusSimpl a b = really_believe_me a b
 multSubDistr : (a, b, c : Integer) -> a * (b - c) = (a * b) - (a * c)
 multSubDistr a b c = really_believe_me a b c
 
+multAddDistr : (a, b, c : Integer) -> a * (b + c) = (a * b) + (a * c)
+multAddDistr a b c = really_believe_me a b c
+
 multDivCancels : (a, b : Integer) -> (a * b) `div` b = a
 multDivCancels a b = really_believe_me a b 
 
@@ -164,6 +167,9 @@ leAcrossAbsMul {a} {b} {c} {d} {e} prf = really_believe_me a b c d e prf
 
 multDistr3 : (a, b, c : Integer) -> a * (b * c) = (a * b) * c
 multDistr3 a b c = really_believe_me a b c
+
+absSubBound : {a : Integer} -> {b : Integer} -> {c : Integer} -> (abs a <= c) = True -> (abs b <= c) = True -> abs (a - b) <= 2 * c = True
+absSubBound {a} {b} {c} altc bltc = really_believe_me a b c altc bltc
 
 addCommutative : (x, y : Integer) -> x + y = y + x
 addCommutative x y = really_believe_me x y
