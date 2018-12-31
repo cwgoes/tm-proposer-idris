@@ -63,6 +63,12 @@ plusMinus a b c = really_believe_me a b c
 plusNeg : (a, b : Integer) -> a + (-b) = a - b
 plusNeg a b = really_believe_me a b
 
+plusMinus2Helper : (a, b, c, d : Integer) -> (((a + c) - (c + d)) - (b + d)) - (a - b) = -2 * d
+plusMinus2Helper a b c d = really_believe_me a b c d
+
+plusMinus2Helper' : (a, b, c, d : Integer) -> ((a + c) - ((b + d) - (c + d))) - (a - b) = 2 * c
+plusMinus2Helper' a b c d = really_believe_me a b c d
+
 multComm : (a, b : Integer) -> a * b = b * a
 multComm a b = really_believe_me a b
 

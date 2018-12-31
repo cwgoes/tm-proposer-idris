@@ -62,9 +62,11 @@ namespace TwoValidator
 
   diffChange : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) ->
-    (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = 2 * wB, snd (incrementElect ((idA, wA, pA), (idB, wB, pB))) = idA) `Either`
-    (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = -2 * wA, snd (incrementElect ((idA, wA, pA), (idB, wB, pB))) = idB)
-  diffChange = ?diffChange
+    (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = -2 * wB, snd (incrementElect ((idA, wA, pA), (idB, wB, pB))) = idA) `Either`
+    (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = 2 * wA, snd (incrementElect ((idA, wA, pA), (idB, wB, pB))) = idB)
+  diffChange idA idB wA wB pA pB = case resultEither idA idB wA wB pA pB of
+    Left prf  => rewrite prf in Left (rewrite (sym (plusMinus2Helper pA pB wA wB)) in Refl, Refl)
+    Right prf => rewrite prf in Right (rewrite (sym (plusMinus2Helper' pA pB wA wB)) in Refl, Refl)
 
   -- Prove: exact change in diff (2 * pA | 2 * pB)
 
@@ -73,7 +75,7 @@ namespace TwoValidator
     (ns ** (n = fst ns + snd ns,
       fst ns = count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))),
       snd ns = count idB (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))),
-      diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))) = (2 * wB * natToInteger (fst ns)) - (2 * wA * natToInteger (snd ns))
+      diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))) = (2 * wA * natToInteger (snd ns)) - (2 * wB * natToInteger (fst ns))
       ))
   totalDiff idA idB wA wB pA pB n = ?totalDiff
 
@@ -91,18 +93,14 @@ namespace TwoValidator
     -> (abs (diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
   diffDiffMany = ?diffDiffMany
 
-  fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
-    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> -- TODO: initial inductive case
-    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
-     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
-  fairlyProportional = ?fairlyProportional
-
+  -- This function just simplifies the inequality to an upper bound on nA.
   reduceHelper : (wA, wB : ProposerWeight) -> (nA, n : Integer) ->
     ((((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True) ->
     nA <= (n * (wA `div` (wA + wB))) + 1 = True
   reduceHelper wA wB nA n lemma1 =
     lemma11
     where
+      -- Progressively simplify / rearrange to solve for nA.
       lemma2 : (((nA * wB) - ((wA * n) - (wA * nA))) <= (wA + wB)) = True
       lemma2 =
         rewrite multComm nA wB in
@@ -161,68 +159,83 @@ namespace TwoValidator
   reduceInequality wA wB nA nB n neq abslt =
     (first, second)
 
-    where lteqA : ((wB * nA) - (wA * nB)) <= (wA + wB) = True
-          lteqA = fst (splitAbs abslt)
+    where
+      -- Split out the first part of the bound on priority difference.
+      lteqA : ((wB * nA) - (wA * nB)) <= (wA + wB) = True
+      lteqA = fst (splitAbs abslt)
 
-          lteqB : ((wA * nB) - (wB * nA)) <= (wA + wB) = True
-          lteqB = snd (splitAbs abslt)
+      -- Split out the second part of the bound on priority difference.
+      lteqB : ((wA * nB) - (wB * nA)) <= (wA + wB) = True
+      lteqB = snd (splitAbs abslt)
 
-          initialForA : (((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True
-          initialForA =
-            rewrite (sym (congSubEq nA nB n neq)) in
-            lteqA
+      -- Turn into an inequality on nA.
+      initialForA : (((wB * nA) - (wA * (n - nA))) <= (wA + wB)) = True
+      initialForA =
+        rewrite (sym (congSubEq nA nB n neq)) in
+        lteqA
 
-          initialForB : (((wA * nB) - (wB * (n - nB))) <= (wB + wA)) = True
-          initialForB =
-            rewrite plusComm wB wA in
-            rewrite (sym (congSubEq nB nA n (rewrite plusComm nB nA in neq))) in
-            lteqB
+      -- Turn into an inequality on nB.
+      initialForB : (((wA * nB) - (wB * (n - nB))) <= (wB + wA)) = True
+      initialForB =
+        rewrite plusComm wB wA in
+        rewrite (sym (congSubEq nB nA n (rewrite plusComm nB nA in neq))) in
+        lteqB
 
-          finalForB : nB <= (n * (wB `div` (wB + wA))) + 1 = True
-          finalForB = reduceHelper wB wA nB n initialForB
+      -- Solve for the upper bound on nB.
+      finalForB : nB <= (n * (wB `div` (wB + wA))) + 1 = True
+      finalForB = reduceHelper wB wA nB n initialForB
 
-          lemma1 : n - nA <= (n * (wB `div` (wB + wA))) + 1 = True
-          lemma1 = rewrite (sym (congSubEq nA nB n neq)) in finalForB
+      -- This sequence of lemmas just transforms the upper bound on nB into a lower bound on nA.
+      lemma1 : n - nA <= (n * (wB `div` (wB + wA))) + 1 = True
+      lemma1 = rewrite (sym (congSubEq nA nB n neq)) in finalForB
 
-          lemma2 : nA - n >= -((n * (wB `div` (wB + wA))) + 1) = True
-          lemma2 = congNegSwap lemma1
+      lemma2 : nA - n >= -((n * (wB `div` (wB + wA))) + 1) = True
+      lemma2 = congNegSwap lemma1
 
-          lemma3 : nA >= -((n * (wB `div` (wB + wA))) + 1) + n = True
-          lemma3 = rewrite (sym (addSubCancels' nA n)) in congPlus' lemma2
+      lemma3 : nA >= -((n * (wB `div` (wB + wA))) + 1) + n = True
+      lemma3 = rewrite (sym (addSubCancels' nA n)) in congPlus' lemma2
 
-          lemma4 : nA >= -((n * ((wB + wA - wA) `div` (wB + wA))) + 1) + n = True
-          lemma4 = rewrite addSubCancels wB wA in lemma3
+      lemma4 : nA >= -((n * ((wB + wA - wA) `div` (wB + wA))) + 1) + n = True
+      lemma4 = rewrite addSubCancels wB wA in lemma3
 
-          lemma5 : nA >= -((n * ((wB + wA) `div` (wB + wA) - (wA `div` (wB + wA)))) + 1) + n = True
-          lemma5 = rewrite (sym (divSubDistr (wB + wA) wA (wB + wA))) in lemma4
+      lemma5 : nA >= -((n * ((wB + wA) `div` (wB + wA) - (wA `div` (wB + wA)))) + 1) + n = True
+      lemma5 = rewrite (sym (divSubDistr (wB + wA) wA (wB + wA))) in lemma4
 
-          lemma6 : nA >= -((n * (1 - (wA `div` (wB + wA)))) + 1) + n = True
-          lemma6 = replace {P = \x => nA >= -((n * (x - (wA `div` (wB + wA)))) + 1) + n = True} (divEq (wB + wA)) lemma5
+      lemma6 : nA >= -((n * (1 - (wA `div` (wB + wA)))) + 1) + n = True
+      lemma6 = replace {P = \x => nA >= -((n * (x - (wA `div` (wB + wA)))) + 1) + n = True} (divEq (wB + wA)) lemma5
 
-          lemma7 : nA >= -(n * (1 - (wA `div` (wB + wA)))) + (-1) + n = True
-          lemma7 =
-            rewrite (sym (negDistr (n * (1 - (wA `div` (wB + wA)))) 1)) in lemma6
+      lemma7 : nA >= -(n * (1 - (wA `div` (wB + wA)))) + (-1) + n = True
+      lemma7 =
+        rewrite (sym (negDistr (n * (1 - (wA `div` (wB + wA)))) 1)) in lemma6
 
-          lemma8 : nA >= -((n * 1) - (n * (wA `div` (wB + wA)))) + (-1) + n = True
-          lemma8 =
-            rewrite (sym (multSubDistr n 1 (wA `div` (wB + wA)))) in
-            lemma7
+      lemma8 : nA >= -((n * 1) - (n * (wA `div` (wB + wA)))) + (-1) + n = True
+      lemma8 =
+        rewrite (sym (multSubDistr n 1 (wA `div` (wB + wA)))) in
+        lemma7
 
-          lemma9 : nA >= -(n - (n * (wA `div` (wB + wA)))) + (-1) + n = True
-          lemma9 = replace {P = \x => nA >= -(x - (n * (wA `div` (wB + wA)))) + (-1) + n = True} (mulByOne n) lemma8
+      lemma9 : nA >= -(n - (n * (wA `div` (wB + wA)))) + (-1) + n = True
+      lemma9 = replace {P = \x => nA >= -(x - (n * (wA `div` (wB + wA)))) + (-1) + n = True} (mulByOne n) lemma8
 
-          lemma10 : nA >= (n * (wA `div` (wB + wA))) - n - 1 + n = True
-          lemma10 =
-            rewrite (sym (plusNeg ((n * (wA `div` (wB + wA))) - n) 1)) in
-            rewrite (sym (negSubDistr n (n * (wA `div` (wB + wA))))) in lemma9
+      lemma10 : nA >= (n * (wA `div` (wB + wA))) - n - 1 + n = True
+      lemma10 =
+        rewrite (sym (plusNeg ((n * (wA `div` (wB + wA))) - n) 1)) in
+        rewrite (sym (negSubDistr n (n * (wA `div` (wB + wA))))) in lemma9
 
-          lemma11 : nA >= (n * (wA `div` (wB + wA))) - 1 = True
-          lemma11 = rewrite (sym (plusAssocElim (n * (wA `div` (wB + wA))) n 1)) in lemma10
+      lemma11 : nA >= (n * (wA `div` (wB + wA))) - 1 = True
+      lemma11 = rewrite (sym (plusAssocElim (n * (wA `div` (wB + wA))) n 1)) in lemma10
 
-          first : nA >= (n * (wA `div` (wA + wB))) - 1 = True
-          first = rewrite (plusComm wA wB) in lemma11
+      -- Isolate the final lower bound on nA.
+      first : nA >= (n * (wA `div` (wA + wB))) - 1 = True
+      first = rewrite (plusComm wA wB) in lemma11
 
-          second : nA <= (n * (wA `div` (wA + wB))) + 1 = True
-          second = reduceHelper wA wB nA n initialForA
+      -- Solve for the final upper bound on nA.
+      second : nA <= (n * (wA `div` (wA + wB))) + 1 = True
+      second = reduceHelper wA wB nA n initialForA
+
+  fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
+    (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> -- TODO: initial inductive case
+    ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
+     (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
+  fairlyProportional = ?fairlyProportional
 
 {- TODO n-validator case, preferably just via an equivalence proof from the 2-validator case. -}
