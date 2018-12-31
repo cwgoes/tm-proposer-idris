@@ -25,9 +25,14 @@ namespace TwoValidator
   incrementElectMany : (n : Nat) -> (s : ElectionState) -> (ElectionState, List ProposerId)
   incrementElectMany Z      state = (state, [])
   incrementElectMany (S k)  state =
-    let (newState, result)    = incrementElect state
-        (finalState, results) = incrementElectMany k newState
-    in (finalState, result :: results)
+    let (previousState, results) = incrementElectMany k state
+        (newState, result) = incrementElect previousState
+    in (newState, result :: results)
+
+  incrementElectManyApplies : (n : Nat) -> (s : ElectionState) ->
+    (fst (incrementElectMany (S n) s) =
+    fst (incrementElect (fst (incrementElectMany n s))))
+  incrementElectManyApplies n s = ?incrementElectManyApplies
 
   diffPositive : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB : ProposerPriority) -> (prf : (pA + wA) >= (pB + wB) = True) ->
@@ -68,23 +73,79 @@ namespace TwoValidator
     Left prf  => rewrite prf in Left (rewrite (sym (plusMinus2Helper pA pB wA wB)) in Refl, Refl)
     Right prf => rewrite prf in Right (rewrite (sym (plusMinus2Helper' pA pB wA wB)) in Refl, Refl)
 
-  -- Prove: exact change in diff (2 * pA | 2 * pB)
-
+  -- Prove the total change in priority difference over n calls of incrementElect.
   totalDiff : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n: Nat) ->
     (ns ** (n = fst ns + snd ns,
       fst ns = count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))),
       snd ns = count idB (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))),
-      diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))) = (2 * wA * natToInteger (snd ns)) - (2 * wB * natToInteger (fst ns))
+      diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = (2 * wA * natToInteger (snd ns)) - (2 * wB * natToInteger (fst ns))
       ))
-  totalDiff idA idB wA wB pA pB n = ?totalDiff
+  totalDiff idA idB wA wB pA pB Z = ((0, 0) ** (Refl, Refl, Refl,
+    replace {P = \x => diffPriority (fst (incrementElectMany 0 ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = x}
+      (sym zeroEqwAwB) diffEqZero))
+    where
+      zeroEqwAwB : (2 * wA * 0) - (2 * wB * 0) = 0
+      zeroEqwAwB =
+        rewrite multZeroZero (2 * wA) in
+        rewrite multZeroZero (2 * wB) in
+        Refl
+
+      diffEqZero : diffPriority (fst (incrementElectMany 0 ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = 0
+      diffEqZero =
+        rewrite (addSubSingle (pA - pB)) in
+        Refl
+  totalDiff idA idB wA wB pA pB (S k) =
+    let ((idA', wA', pA'), (idB', wB', pB')) = previousState
+        ((nA, nB) ** (eq, cA, cB, diffEq)) = previous in
+    case diffChange idA' idB' wA' wB' pA' pB' of
+      Left prfA => (
+        ((nA + 1, nB)) **
+        (rewrite plusCommutative (nA + 1) nB in rewrite plusCommutative nA 1 in rewrite eq in rewrite plusCommutative nA nB in rewrite plusSuccRightSucc nB nA in Refl,
+         ?totalDiffLeft3,
+         ?totalDiffLeft2,
+         ?totalDiffLeft
+        ))
+      Right prfB => (
+        ((nA, nB + 1)) **
+        (rewrite plusCommutative nA (nB + 1) in rewrite plusCommutative nB 1 in rewrite eq in rewrite plusCommutative nA nB in Refl,
+          ?totalDiffRight3,
+          ?totalDiffRight2,
+          ?totalDiffRight
+        ))
+    where
+      previousState : ElectionState
+      previousState = fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))
+
+      previous : (ns ** (k = fst ns + snd ns,
+        fst ns = count idA (snd (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))),
+        snd ns = count idB (snd (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))),
+        diffPriority (fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = (2 * wA * natToInteger (snd ns)) - (2 * wB * natToInteger (fst ns))
+          ))
+      previous = totalDiff idA idB wA wB pA pB k
 
   -- Prove: total diff over n calls, total diff = 2 wB nA - 2 wA nB
 
   diffDiff : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (abs (pA - pB) <= (2*wA + 2*wB) = True)
     -> (abs (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB))))) <= (2*wA + 2*wB) = True)
-  diffDiff = ?diffDiff
+  diffDiff idA idB wA wB pA pB prf =
+    case excludedBool ((pA + wA) >= (pB + wB)) of
+      Left prf => ?diffDiffRight
+      Right prf => ?diffDiffRight
+
+  where
+    helper1 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) >= (wB - wA) = True
+    helper1 = ?helper1
+
+    -- pA' + 2 * wB - pB' >= wB - wA = True
+    -- pA' - pB' >= -wB - wA = True
+    -- pB' - pA' <= wA + wB = True
+    -- (could be negative)
+    -- start from other direction
+
+    helper2 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) < (wA - wB) = True
+    helper2 = ?helper2
 
   -- Prove: maximum bound on diff in incrementElectMany calls by induction
 

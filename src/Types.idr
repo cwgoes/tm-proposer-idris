@@ -111,6 +111,15 @@ multSubDistr a b c = really_believe_me a b c
 multDivCancels : (a, b : Integer) -> (a * b) `div` b = a
 multDivCancels a b = really_believe_me a b 
 
+multZeroZero : (a : Integer) -> (a * 0) = 0
+multZeroZero a = really_believe_me a
+
+addZeroZero : 0 + 0 = 0
+addZeroZero = really_believe_me 0
+
+subZeroZero : 0 - 0 = 0
+subZeroZero = really_believe_me 0
+
 minusCancels : (a, b, c : Integer) -> a - (b - c) = a + c - b
 minusCancels a b c = really_believe_me a b c
 
@@ -119,6 +128,9 @@ addSubCancels a b = really_believe_me a b
 
 addSubCancels' : (a, b : Integer) -> (a - b + b) = a
 addSubCancels' a b = really_believe_me a b
+
+addSubSingle : (a : Integer) -> (a - a) = 0
+addSubSingle a = really_believe_me a
 
 congPlus : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a + c <= b + c = True
 congPlus {a} {b} {c} prf = really_believe_me a b c prf
