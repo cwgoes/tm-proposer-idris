@@ -114,9 +114,11 @@ namespace TwoValidator
           ?totalDiffRight
         ))
     where
+      -- Inductive state.
       previousState : ElectionState
       previousState = fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))
 
+      -- Inductive case.
       previous : (ns ** (k = fst ns + snd ns,
         fst ns = count idA (snd (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))),
         snd ns = count idB (snd (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))),
@@ -191,9 +193,6 @@ namespace TwoValidator
 
     rightFinal : ((pA + wA) >= (pB + wB) = False) -> abs (pA - pB + 2 * wA) <= (wA + wB) = True
     rightFinal rbound = joinAbs (rightLowerBound rbound, rightUpperBound rbound)
-
-    helper2 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) < (wA - wB) = True
-    helper2 = ?helper2
 
   -- Prove maximum bound on diff in incrementElectMany calls by induction.
   diffDiffMany : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
