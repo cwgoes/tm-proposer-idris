@@ -57,6 +57,9 @@ congSubEq a b c prf = really_believe_me a b c prf
 plusComm : (a, b : Integer) -> a + b = b + a
 plusComm a b = really_believe_me a b
 
+plusComm' : (a, b : Integer) -> -a + b = b - a
+plusComm' a b = really_believe_me a b
+
 plusMinus : (a, b, c : Integer) -> a - b + c = a + c - b
 plusMinus a b c = really_believe_me a b c
 
@@ -77,6 +80,15 @@ multDivComm a b c = really_believe_me a b c
 
 negDistr : (a, b : Integer) -> -(a + b) = -a + -b
 negDistr a b = really_believe_me a b
+
+oneTwoNeg : (a, b : Integer) -> a + (-b) = a + b - (2 * b)
+oneTwoNeg a b = really_believe_me a b
+
+oneTwoNeg' : (a, b, c, d : Integer) -> (a - b) - 2 * d = ((a + c) - (c + d)) - (b + d)
+oneTwoNeg' a b c d = really_believe_me a b c d
+
+oneTwoPos : (a, b, c, d : Integer) -> (a - b) + 2 * c = ((a + c)) - ((b + d) - (c + d))
+oneTwoPos a b c d = really_believe_me a b c d
 
 negSubDistr : (a, b : Integer) -> -(a - b) = b - a
 negSubDistr a b = really_believe_me a b
@@ -126,6 +138,9 @@ subZeroZero = really_believe_me 0
 minusCancels : (a, b, c : Integer) -> a - (b - c) = a + c - b
 minusCancels a b c = really_believe_me a b c
 
+minusSwitch : (a, b, c : Integer) -> a - c + b = a + b - c
+minusSwitch a b c = really_believe_me a b c
+
 addSubCancels : (a, b : Integer) -> (a + b - b) = a
 addSubCancels a b = really_believe_me a b
 
@@ -137,6 +152,12 @@ addSubSingle a = really_believe_me a
 
 convEq : {a : Nat} -> {b : Nat} -> {c : Nat} -> (a = b + c) -> (natToInteger a = natToInteger b + natToInteger c)
 convEq {a} {b} {c} prf = really_believe_me a b c prf
+
+congSub : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a - c <= b - c = True
+congSub {a} {b} {c} prf = really_believe_me a b c prf
+
+congSub' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = True -> a - c >= b - c = True
+congSub' {a} {b} {c} prf = really_believe_me a b c prf
 
 congPlus : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a + c <= b + c = True
 congPlus {a} {b} {c} prf = really_believe_me a b c prf

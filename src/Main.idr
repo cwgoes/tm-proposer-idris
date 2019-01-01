@@ -124,8 +124,7 @@ namespace TwoValidator
           ))
       previous = totalDiff idA idB wA wB pA pB k
 
-  -- Prove: total diff over n calls, total diff = 2 wB nA - 2 wA nB
-
+  -- Prove maximum bound in diff over a single incrementElect call.
   diffDiff : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (abs (pA - pB) <= (wA + wB) = True)
     -> (abs (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB))))) <= (wA + wB) = True)
@@ -133,58 +132,70 @@ namespace TwoValidator
     case excludedBool ((pA + wA) >= (pB + wB)) of
       Left prf' =>
         rewrite leftCase prf' in
-        rewrite leftFinal in
+        rewrite leftFinal prf' in
         Refl
       Right prf' =>
         rewrite rightCase prf' in
-        rewrite rightFinal in
+        rewrite rightFinal prf' in
         Refl
 
   where
-    helper1 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) >= (wB - wA) = True
-    helper1 = ?helper1
-
     leftCase : ((pA + wA) >= (pB + wB) = True) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB - 2 * wB)
-    leftCase = ?leftCase
+    leftCase prgte =
+      rewrite diffPositive idA idB wA wB pA pB prgte in
+      rewrite oneTwoNeg' pA pB wA wB in
+      Refl
 
-    -- abs (pA - pB) <= (wA + wB)
-    -- either
-    -- pA + wA >= pB + wB ->> pA >= pB + wB - wA
-    -- ->>
+    leftLowerBound : ((pA + wA) >= (pB + wB) = True) -> (pA - pB - 2 * wB) >= -(wA + wB) = True
+    leftLowerBound lbound = llemma5
+      where
+        llemma1 : ((pA + wA) >= (wB + pB) = True)
+        llemma1 = rewrite plusComm wB pB in lbound
 
-    -- abs (x - y) <= z
-    -- >> -z < x - y < z
+        llemma2 : (pA + wA - pB) >= wB = True
+        llemma2 = rewrite (sym $ addSubCancels wB pB) in congSub' {c=pB} llemma1
 
-    -- >> want to prove : -2 wA < (pA - pB) < 2 wA + 4 wB
-    -- can prove upper bound by abs
-    -- lower bound: have: pA - pB >= wB - wA >> pA - pB >= -wA
+        llemma2' : (pA - pB + wA) >= wB = True
+        llemma2' = rewrite (minusSwitch pA wA pB) in llemma2
 
-    leftLowerBound : (pA - pB - 2 * wB) >= -(wA + wB) = True
-    leftLowerBound = ?leftLowerBound
+        llemma3 : pA - pB >= wB - wA = True
+        llemma3 = rewrite (sym $ addSubCancels (pA - pB) wA) in congSub' {c=wA} llemma2'
 
-    leftUpperBound : (pA - pB - 2 * wB) <= (wA + wB) = True
-    leftUpperBound = ?leftUpperBound
+        llemma4 : pA - pB - 2 * wB >= wB - wA - 2 * wB = True
+        llemma4 = congSub' llemma3
 
-    leftFinal : abs (pA - pB - 2 * wB) <= (wA + wB) = True
-    leftFinal = joinAbs (leftLowerBound, leftUpperBound)
+        llemma5 : (pA - pB - 2 * wB) >= -(wA + wB) = True
+        llemma5 = rewrite negDistr wA wB in rewrite oneTwoNeg (-wA) wB in rewrite plusComm' wA wB in llemma4
+
+    -- pA - pB <= wA + wB by abs
+    -- Need proof wb > 0 for abs relation to hold (subtract 2 * wb).
+    leftUpperBound : ((pA + wA) >= (pB + wB) = True) -> (pA - pB - 2 * wB) <= (wA + wB) = True
+    leftUpperBound lbound = ?leftUpperBound
+
+    leftFinal : ((pA + wA) >= (pB + wB) = True) -> abs (pA - pB - 2 * wB) <= (wA + wB) = True
+    leftFinal lbound = joinAbs (leftLowerBound lbound, leftUpperBound lbound)
 
     rightCase : ((pA + wA) >= (pB + wB) = False) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB + 2 * wA)
-    rightCase = ?rightCase
+    rightCase prngte =
+      rewrite diffNegative idA idB wA wB pA pB prngte in
+      rewrite oneTwoPos pA pB wA wB in
+      Refl
 
-    rightLowerBound : (pA - pB + 2 * wA) >= -(wA + wB) = True
-    rightLowerBound = ?rightLowerBound
+    -- TODO by analogue
+    rightLowerBound : ((pA + wA) >= (pB + wB) = False) -> (pA - pB + 2 * wA) >= -(wA + wB) = True
+    rightLowerBound rbound = ?rightLowerBound
 
-    rightUpperBound : (pA - pB + 2 * wA) <= (wA + wB) = True
-    rightUpperBound = ?rightUpperBound
+    -- TODO by analogue
+    rightUpperBound : ((pA + wA) >= (pB + wB) = False) -> (pA - pB + 2 * wA) <= (wA + wB) = True
+    rightUpperBound rbound = ?rightUpperBound
 
-    rightFinal : abs (pA - pB + 2 * wA) <= (wA + wB) = True
-    rightFinal = joinAbs (rightLowerBound, rightUpperBound)
+    rightFinal : ((pA + wA) >= (pB + wB) = False) -> abs (pA - pB + 2 * wA) <= (wA + wB) = True
+    rightFinal rbound = joinAbs (rightLowerBound rbound, rightUpperBound rbound)
 
     helper2 : ((pA + wA) >= (pB + wB)) = True -> (pA - pB) < (wA - wB) = True
     helper2 = ?helper2
 
-  -- Prove: maximum bound on diff in incrementElectMany calls by induction
-
+  -- Prove maximum bound on diff in incrementElectMany calls by induction.
   diffDiffMany : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs (pA - pB) <= (wA + wB) = True)
     -> (abs (diffPriority (fst (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= (wA + wB) = True)
@@ -358,16 +369,20 @@ namespace TwoValidator
       second : nA <= (n * (wA `div` (wA + wB))) + 1 = True
       second = reduceHelper wA wB nA n initialForA
 
+  -- Final statement proving the desired fairness criteria given an initial bound on the difference in proposer priority.
   fairlyProportional : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n : Nat) -> (abs(pA - pB) <= (wA + wB) = True) ->
     ((natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) >= ((natToInteger n * (wA `div` (wA + wB))) - 1) = True,
      (natToInteger $ count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB))))) <= ((natToInteger n * (wA `div` (wA + wB))) + 1) = True)
   fairlyProportional idA idB wA wB pA pB n initial =
+    -- Calculate the total difference in priorities.
     let ((nA, nB) ** (neq, nAeq, nBeq, diffEq)) = totalDiff idA idB wA wB pA pB n in
     rewrite (sym nAeq) in
+    -- Substitute out the calculated total difference for the known bound on priority change (the lemmas just perform arithmetic simplification).
     let lemma1 = the (abs (2 * wA * (natToInteger nB) - 2 * wB * (natToInteger nA)) <= 2*wA + 2*wB = True) (rewrite (sym diffEq) in diffDiffBound)
         lemma2 = leAcrossAbsMul {a=2} {b=wA * natToInteger nB} {c=wB * natToInteger nA} {d=wA} {e=wB} (rewrite multDistr3 2 wA (natToInteger nB) in rewrite multDistr3 2 wB (natToInteger nA) in lemma1)
         lemma3 = the ((abs ((wB * natToInteger nA) - (wA * natToInteger nB)) <= (wA + wB)) = True) (rewrite (absNeg {a = (wB * natToInteger nA)} {b = (wA * natToInteger nB)}) in lemma2) in
+    -- Reduce the inequality to solve for bounds on nA.
     let (f, s) = (reduceInequality wA wB (natToInteger nA) (natToInteger nB) (natToInteger n) (sym $ convEq neq) lemma3) in
     (f, s)
 
