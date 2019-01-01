@@ -10,6 +10,7 @@ fairlyProportional :
   (wA : ProposerWeight) -> (wB : ProposerWeight) ->
   (pA : ProposerPriority) -> (pB: ProposerPriority) ->
   (n : Nat) ->
+  (wA >= 0 = True) -> (wB >= 0 = True) ->
   (abs(pA - pB) <= (wA + wB) = True) ->
   ((count idA (snd (incrementElectMany n ((idA, wA, pA), (idB, wB, pB)))))
       >= ((n * (wA / (wA + wB))) - 1) = True,
