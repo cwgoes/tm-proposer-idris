@@ -13,8 +13,6 @@ import public Prelude.Interfaces
 
 %access public export
 
--- Types
-
 ProposerId : Type
 ProposerId = Integer
 
@@ -44,6 +42,9 @@ eqls : (s : ((a, b, c), (d, e, f))) ->
     thd3 (snd s))) =
   s
 eqls ((a', b', c'), (d', e', f')) = Refl
+
+fstEq : {a : aT} -> {b : aT} -> {c : cT} -> {d : dT} -> a = b -> fst (a, c) = fst (b, d)
+fstEq {a} {b} {c} {d} prf = rewrite prf in Refl
 
 count : (n : Integer) -> (l : List Integer) -> Nat
 count n [] = 0
@@ -184,11 +185,9 @@ congPlus' {a} {b} {c} prf = really_believe_me a b c prf
 congPlusF' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = False -> a + c >= b + c = False
 congPlusF' {a} {b} {c} prf = really_believe_me a b c prf
 
+-- c must be positive, the usage is safe but this should be checked
 congDiv : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a `div` c <= b `div` c = True
 congDiv {a} {b} {c} prf = really_believe_me a b c prf
-
-congDiv' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = True -> a `div` c >= b `div` c = True
-congDiv' {a} {b} {c} prf = really_believe_me a b c prf
 
 congNegSwap : {a : Integer} -> {b : Integer} -> {c : Integer} -> (a - b) <= c = True -> (b - a) >= -c = True
 congNegSwap {a} {b} {c} prf = really_believe_me a b c prf
@@ -217,8 +216,8 @@ leMul {a} p = really_believe_me a p
 gteFalseLe : {a : Integer} -> {b : Integer} -> a >= b = False -> a <= b = True
 gteFalseLe {a} {b} prf = really_believe_me a b prf
 
-leAcrossAbsMul : {a : Integer} -> {b : Integer} -> {c : Integer} -> {d : Integer} -> {e : Integer} -> abs (a * b - a * c) <= (a * d) + (a * e) = True -> abs (b - c) <= d + e = True
-leAcrossAbsMul {a} {b} {c} {d} {e} prf = really_believe_me a b c d e prf
+leAcrossAbsMul : {a : Integer} -> {gt : a >= 0 = True} -> {b : Integer} -> {c : Integer} -> {d : Integer} -> {e : Integer} -> abs (a * b - a * c) <= (a * d) + (a * e) = True -> abs (b - c) <= d + e = True
+leAcrossAbsMul {a} {gt} {b} {c} {d} {e} prf = really_believe_me a gt b c d e prf
 
 multDistr3 : (a, b, c : Integer) -> a * (b * c) = (a * b) * c
 multDistr3 a b c = really_believe_me a b c
@@ -228,9 +227,6 @@ absSubBound {a} {b} {c} altc bltc = really_believe_me a b c altc bltc
 
 addCommutative : (x, y : Integer) -> x + y = y + x
 addCommutative x y = really_believe_me x y
-
-excludedMiddle : p `Either` Not p
-excludedMiddle {p} = really_believe_me p
 
 excludedBool : (b : Bool) -> (b = True) `Either` (b = False)
 excludedBool True   = Left Refl

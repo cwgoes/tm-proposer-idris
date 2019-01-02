@@ -477,7 +477,7 @@ namespace TwoValidator
     rewrite (sym nAeq) in
     -- Substitute out the calculated total difference for the known bound on priority change (the lemmas just perform arithmetic simplification).
     let lemma1 = the (abs (2 * wA * (natToInteger nB) - 2 * wB * (natToInteger nA)) <= 2*wA + 2*wB = True) (rewrite (sym diffEq) in diffDiffBound)
-        lemma2 = leAcrossAbsMul {a=2} {b=wA * natToInteger nB} {c=wB * natToInteger nA} {d=wA} {e=wB} (rewrite multDistr3 2 wA (natToInteger nB) in rewrite multDistr3 2 wB (natToInteger nA) in lemma1)
+        lemma2 = leAcrossAbsMul {a=2} {gt=Refl} {b=wA * natToInteger nB} {c=wB * natToInteger nA} {d=wA} {e=wB} (rewrite multDistr3 2 wA (natToInteger nB) in rewrite multDistr3 2 wB (natToInteger nA) in lemma1)
         lemma3 = the ((abs ((wB * natToInteger nA) - (wA * natToInteger nB)) <= (wA + wB)) = True) (rewrite (absNeg {a = (wB * natToInteger nA)} {b = (wA * natToInteger nB)}) in lemma2) in
     -- Reduce the inequality to solve for bounds on nA.
     let (f, s) = (reduceInequality wA wB (natToInteger nA) (natToInteger nB) (natToInteger n) (sym $ convEq neq) lemma3) in
