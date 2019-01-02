@@ -84,6 +84,9 @@ negDistr a b = really_believe_me a b
 oneTwoNeg : (a, b : Integer) -> a + (-b) = a + b - (2 * b)
 oneTwoNeg a b = really_believe_me a b
 
+oneTwoPos' : (a, b : Integer) -> a + b = a - b + (2 * b)
+oneTwoPos' a b = really_believe_me a b
+
 oneTwoNeg' : (a, b, c, d : Integer) -> (a - b) - 2 * d = ((a + c) - (c + d)) - (b + d)
 oneTwoNeg' a b c d = really_believe_me a b c d
 
@@ -159,11 +162,17 @@ congSub {a} {b} {c} prf = really_believe_me a b c prf
 congSub' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = True -> a - c >= b - c = True
 congSub' {a} {b} {c} prf = really_believe_me a b c prf
 
+congSubF' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = False -> a - c >= b - c = False
+congSubF' {a} {b} {c} prf = really_believe_me a b c prf
+
 congPlus : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a + c <= b + c = True
 congPlus {a} {b} {c} prf = really_believe_me a b c prf
 
 congPlus' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = True -> a + c >= b + c = True
 congPlus' {a} {b} {c} prf = really_believe_me a b c prf
+
+congPlusF' : {a : Integer} -> {b : Integer} -> {c : Integer} -> a >= b = False -> a + c >= b + c = False
+congPlusF' {a} {b} {c} prf = really_believe_me a b c prf
 
 congDiv : {a : Integer} -> {b : Integer} -> {c : Integer} -> a <= b = True -> a `div` c <= b `div` c = True
 congDiv {a} {b} {c} prf = really_believe_me a b c prf
@@ -177,11 +186,26 @@ congNegSwap {a} {b} {c} prf = really_believe_me a b c prf
 splitAbs : {a : Integer} -> {b : Integer} -> {c : Integer} -> abs (a - b) <= c = True -> (a - b <= c = True, b - a <= c = True)
 splitAbs {a} {b} {c} prf = really_believe_me a b c prf
 
+splitAbs' : {a : Integer} -> {b : Integer} -> abs a <= b = True -> (a <= b = True, a >= -b = True)
+splitAbs' {a} {b} prf = really_believe_me a b prf
+
 joinAbs : {a : Integer} -> {b : Integer} -> (a >= -b = True, a <= b = True) -> abs a <= b = True
 joinAbs {a} {b} (p, p') = really_believe_me a b p p'
 
 absNeg : {a : Integer} -> {b : Integer} -> abs (a - b) = abs (b - a)
 absNeg {a} {b} = really_believe_me a b
+
+lePos : {a : Integer} -> {b : Integer} -> {c : Integer} -> c >= 0 = True -> a <= b = True -> a - c <= b = True
+lePos {a} {b} {c} p p' = really_believe_me a b c p p'
+
+gePos : {a : Integer} -> {b : Integer} -> {c : Integer} -> c >= 0 = True -> a >= b = True -> a + c >= b = True
+gePos {a} {b} {c} p p' = really_believe_me a b c p p'
+
+leMul : {a : Integer} -> a >= 0 = True -> 2 * a >= 0 = True
+leMul {a} p = really_believe_me a p
+
+gteFalseLe : {a : Integer} -> {b : Integer} -> a >= b = False -> a <= b = True
+gteFalseLe {a} {b} prf = really_believe_me a b prf
 
 leAcrossAbsMul : {a : Integer} -> {b : Integer} -> {c : Integer} -> {d : Integer} -> {e : Integer} -> abs (a * b - a * c) <= (a * d) + (a * e) = True -> abs (b - c) <= d + e = True
 leAcrossAbsMul {a} {b} {c} {d} {e} prf = really_believe_me a b c d e prf

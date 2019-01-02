@@ -143,6 +143,7 @@ namespace TwoValidator
         Refl
 
   where
+    -- Just reduction...
     leftCase : ((pA + wA) >= (pB + wB) = True) -> diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) = (pA - pB - 2 * wB)
     leftCase prgte =
       rewrite diffPositive idA idB wA wB pA pB prgte in
@@ -170,10 +171,8 @@ namespace TwoValidator
         llemma5 : (pA - pB - 2 * wB) >= -(wA + wB) = True
         llemma5 = rewrite negDistr wA wB in rewrite oneTwoNeg (-wA) wB in rewrite plusComm' wA wB in llemma4
 
-    -- pA - pB <= wA + wB by abs
-    -- Need proof wb > 0 for abs relation to hold (subtract 2 * wb).
     leftUpperBound : ((pA + wA) >= (pB + wB) = True) -> (pA - pB - 2 * wB) <= (wA + wB) = True
-    leftUpperBound lbound = ?leftUpperBound
+    leftUpperBound lbound = lePos (leMul wBPos) $ fst $ splitAbs prf
 
     leftFinal : ((pA + wA) >= (pB + wB) = True) -> abs (pA - pB - 2 * wB) <= (wA + wB) = True
     leftFinal lbound = joinAbs (leftLowerBound lbound, leftUpperBound lbound)
@@ -184,13 +183,29 @@ namespace TwoValidator
       rewrite oneTwoPos pA pB wA wB in
       Refl
 
-    -- TODO by analogue
     rightLowerBound : ((pA + wA) >= (pB + wB) = False) -> (pA - pB + 2 * wA) >= -(wA + wB) = True
-    rightLowerBound rbound = ?rightLowerBound
+    rightLowerBound rbound = gePos (leMul wAPos) $ snd $ splitAbs' prf
 
-    -- TODO by analogue
     rightUpperBound : ((pA + wA) >= (pB + wB) = False) -> (pA - pB + 2 * wA) <= (wA + wB) = True
-    rightUpperBound rbound = ?rightUpperBound
+    rightUpperBound rbound = gteFalseLe rlemma5
+      where
+        rlemma1 : ((pA + wA) >= (wB + pB) = False)
+        rlemma1 = rewrite plusComm wB pB in rbound
+
+        rlemma2 : (pA + wA - pB) >= wB = False
+        rlemma2 = rewrite (sym $ addSubCancels wB pB) in congSubF' {c=pB} rlemma1
+
+        rlemma2' : (pA - pB + wA) >= wB = False
+        rlemma2' = rewrite (minusSwitch pA wA pB) in rlemma2
+
+        rlemma3 : pA - pB >= wB - wA = False
+        rlemma3 = rewrite (sym $ addSubCancels (pA - pB) wA) in congSubF' {c=wA} rlemma2'
+
+        rlemma4 : pA - pB + 2 * wA >= wB - wA + 2 * wA = False
+        rlemma4 = congPlusF' rlemma3
+
+        rlemma5 : pA - pB + 2 * wA >= wA + wB = False
+        rlemma5 = rewrite plusComm wA wB in rewrite oneTwoPos' wB wA in rlemma4
 
     rightFinal : ((pA + wA) >= (pB + wB) = False) -> abs (pA - pB + 2 * wA) <= (wA + wB) = True
     rightFinal rbound = joinAbs (rightLowerBound rbound, rightUpperBound rbound)

@@ -34,6 +34,8 @@ The requisite initial bound on the difference in proposer priority is the reason
 - At present, this proof only covers the two-validator case - a reduction from the n-validator case is planned.
 - The Idris standard library does not implement proofs of standard field laws for arithmetic operations over integers, so these are [assumed to hold](src/Types.idr).
   In practice standard library proofs wouldn't be helpful anyways since the actual implementation is in Golang, not Idris.
+- This constitutes a proof of algorithmic correctness, which is not the same thing as implementational correctness - the Golang
+  code could have incorrect optimizations, integer overflow/underflow, etc.
 
 ### Usage
 
