@@ -65,6 +65,34 @@ namespace TwoValidator
       Left prf  => Left $ diffPositive idA idB wA wB pA pB prf
       Right prf => Right $ diffNegative idA idB wA wB pA pB prf
 
+  wAConserved' : (s : ElectionState) -> snd3 (fst (fst (incrementElect s))) = snd3 (fst s)
+  wAConserved' ((idA, wA, pA), (idB, wB, pB)) =
+    case resultEither idA idB wA wB pA pB of
+      Left prf => rewrite prf in Refl
+      Right prf => rewrite prf in Refl
+
+  wAConserved : (s : ElectionState) -> (n : Nat) -> snd3 (fst (fst (incrementElectMany n s))) = snd3 (fst s)
+  wAConserved s Z = Refl
+  wAConserved s (S k) =
+    rewrite incrementElectManyApplies k s in
+    rewrite wAConserved' (fst (incrementElectMany k s)) in
+    rewrite wAConserved s k in
+    Refl
+
+  wBConserved' : (s : ElectionState) -> snd3 (snd (fst (incrementElect s))) = snd3 (snd s)
+  wBConserved' ((idA, wA, pA), (idB, wB, pB)) =
+    case resultEither idA idB wA wB pA pB of
+      Left prf => rewrite prf in Refl
+      Right prf => rewrite prf in Refl
+
+  wBConserved : (s : ElectionState) -> (n : Nat) -> snd3 (snd (fst (incrementElectMany n s))) = snd3 (snd s)
+  wBConserved s Z = Refl
+  wBConserved s (S k) =
+    rewrite incrementElectManyApplies k s in
+    rewrite wBConserved' (fst (incrementElectMany k s)) in
+    rewrite wBConserved s k in
+    Refl
+
   diffChange : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) ->
     (diffPriority (fst (incrementElect ((idA, wA, pA), (idB, wB, pB)))) - diffPriority ((idA, wA, pA), (idB, wB, pB)) = -2 * wB, snd (incrementElect ((idA, wA, pA), (idB, wB, pB))) = idA) `Either`
@@ -230,12 +258,6 @@ namespace TwoValidator
 
       inductive : (abs (diffPriority kstate)) <= (wA + wB) = True
       inductive = diffDiffMany idA idB wA wB pA pB k wAPos wBPos prf
-
-      wAConserved : {s : ElectionState, n : Nat} -> snd3 (fst (fst (incrementElectMany n s))) = snd3 (fst s)
-      wAConserved = ?wAConserved
-
-      wBConserved : {s : ElectionState, n : Nat} -> snd3 (snd (fst (incrementElectMany n s))) = snd3 (snd s)
-      wBConserved = ?wBConserved
 
       inductive' : (abs (diffPriority kstate)) <= ((snd3 (fst kstate)) + (snd3 (snd kstate))) = True
       inductive' = ?inductive'
