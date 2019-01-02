@@ -35,6 +35,16 @@ snd3 (_, b, _) = b
 thd3 : (a, b, c) -> c
 thd3 (_, _, c) = c
 
+eqls : (s : ((a, b, c), (d, e, f))) ->
+  ((fst3 (fst s),
+    snd3 (fst s),
+    thd3 (fst s)),
+   (fst3 (snd s),
+    snd3 (snd s),
+    thd3 (snd s))) =
+  s
+eqls ((a', b', c'), (d', e', f')) = Refl
+
 count : (n : Integer) -> (l : List Integer) -> Nat
 count n [] = 0
 count n (x :: xs) = (if n == x then 1 else 0) + count n xs

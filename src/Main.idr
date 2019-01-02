@@ -259,15 +259,68 @@ namespace TwoValidator
       inductive : (abs (diffPriority kstate)) <= (wA + wB) = True
       inductive = diffDiffMany idA idB wA wB pA pB k wAPos wBPos prf
 
+      cons1 : snd3 (fst kstate) = wA
+      cons1 = wAConserved state k
+
+      cons2 : snd3 (snd kstate) = wB
+      cons2 = wBConserved state k
+
       inductive' : (abs (diffPriority kstate)) <= ((snd3 (fst kstate)) + (snd3 (snd kstate))) = True
-      inductive' = ?inductive'
-      --inductive' = rewrite (sym (wAConserved {n=k})) in rewrite (sym wBConserved {n=k}) in rewrite inductive in Refl
+      inductive' = rewrite cons1 in rewrite cons2 in inductive
 
       applies : fst (incrementElectMany (S k) state) = fst (incrementElect kstate)
       applies = incrementElectManyApplies k state
 
       step : (abs (diffPriority (fst (incrementElect kstate))) <= (wA + wB) = True)
-      step = ?step --let ((idA', wA', pA'), (idB', wB', pB')) = kstate in diffDiff idA' idB' wA' wB' pA' pB' ?todo
+      step = final
+          where
+            idA' : ProposerId
+            idA' = fst3 (fst kstate)
+
+            wA' : ProposerWeight
+            wA' = snd3 (fst kstate)
+
+            pA' : ProposerPriority
+            pA' = thd3 (fst kstate)
+
+            idB' : ProposerId
+            idB' = fst3 (snd kstate)
+
+            wB' : ProposerWeight
+            wB' = snd3 (snd kstate)
+
+            pB' : ProposerPriority
+            pB' = thd3 (snd kstate)
+
+            wAPos' : wA' >= 0 = True
+            wAPos' = rewrite cons1 in wAPos
+
+            wBPos' : wB' >= 0 = True
+            wBPos' = rewrite cons2 in wBPos
+
+            kseq : ((idA', wA', pA'), (idB', wB', pB')) = kstate
+            kseq = eqls kstate
+
+            inductive'' : abs (pA' - pB') <= wA' + wB' = True
+            inductive'' = replace {P = \x => (abs (diffPriority x)) <= ((snd3 (fst x)) + (snd3 (snd x))) = True} (sym kseq) inductive'
+
+            final' : abs (diffPriority (fst (incrementElect ((idA', wA', pA'), (idB', wB', pB'))))) <= (wA' + wB') = True
+            final' = diffDiff idA' idB' wA' wB' pA' pB' wAPos' wBPos' inductive''
+
+            wAC : wA = wA'
+            wAC = rewrite cons1 in Refl
+
+            wBC : wB = wB'
+            wBC = rewrite cons2 in Refl
+
+            final'' : (abs (diffPriority (fst (incrementElect kstate))) <= (wA' + wB') = True)
+            final'' = replace {P = \x => abs (diffPriority (fst (incrementElect x))) <= (wA' + wB') = True} kseq final'
+
+            final : (abs (diffPriority (fst (incrementElect kstate))) <= (wA + wB) = True)
+            final =
+              replace {P = \x => (abs (diffPriority (fst (incrementElect kstate))) <= (x + wB) = True)} (sym wAC) $
+              replace {P = \x => (abs (diffPriority (fst (incrementElect kstate))) <= (wA' + x) = True)} (sym wBC) $
+              final''
 
   -- This function just simplifies the inequality to an upper bound on nA.
   reduceHelper : (wA, wB : ProposerWeight) -> (nA, n : Integer) ->

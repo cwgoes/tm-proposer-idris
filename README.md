@@ -24,7 +24,7 @@ In English, this proof could be read as "a validator, in a sequence of proposer 
 changes take place, proposes no fewer blocks than the total blocks in the epoch multiplied by its fraction of stake
 less one, and proposes no more blocks than the total blocks in the epoch multiplied by its fraction of stake plus one".
 
-As epochs can be as short as one block, this is the strictest possible fairness criterion.
+As epochs can be as short as one block (for which one proposer must be chosen), this is the strictest possible fairness criterion.
 
 The requisite initial bound on the difference in proposer priority is the reason for [this pull request](https://github.com/tendermint/tendermint/pull/3049).
 
