@@ -22,17 +22,25 @@ namespace TwoValidator
        else
          (((aId, aWeight, newPriorityA), (bId, bWeight, newPriorityB - totalWeight)), bId)
 
+  joinApply : (ElectionState, List ProposerId) -> (ElectionState, List ProposerId)
+  joinApply (previousState, results) = (fst result, snd result :: results)
+      where result : (ElectionState, ProposerId)
+            result = incrementElect previousState
+
+  joinApplyElects : (pr : (ElectionState, List ProposerId)) -> fst (incrementElect (fst pr)) = fst (joinApply pr)
+  joinApplyElects (s, l) = Refl
+
   incrementElectMany : (n : Nat) -> (s : ElectionState) -> (ElectionState, List ProposerId)
   incrementElectMany Z      state = (state, [])
-  incrementElectMany (S k)  state =
-    let (previousState, results) = incrementElectMany k state
-        (newState, result) = incrementElect previousState
-    in (newState, result :: results)
+  incrementElectMany (S k)  state = joinApply (incrementElectMany k state)
 
   incrementElectManyApplies : (n : Nat) -> (s : ElectionState) ->
     (fst (incrementElectMany (S n) s) =
     fst (incrementElect (fst (incrementElectMany n s))))
-  incrementElectManyApplies n s = ?incrementElectManyApplies
+  incrementElectManyApplies Z s = Refl
+  incrementElectManyApplies (S k) s =
+    rewrite joinApplyElects (joinApply (incrementElectMany k s)) in
+    Refl
 
   diffPositive : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB : ProposerPriority) -> (prf : (pA + wA) >= (pB + wB) = True) ->

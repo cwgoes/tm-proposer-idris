@@ -43,9 +43,6 @@ eqls : (s : ((a, b, c), (d, e, f))) ->
   s
 eqls ((a', b', c'), (d', e', f')) = Refl
 
-fstEq : {a : aT} -> {b : aT} -> {c : cT} -> {d : dT} -> a = b -> fst (a, c) = fst (b, d)
-fstEq {a} {b} {c} {d} prf = rewrite prf in Refl
-
 count : (n : Integer) -> (l : List Integer) -> Nat
 count n [] = 0
 count n (x :: xs) = (if n == x then 1 else 0) + count n xs
