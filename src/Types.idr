@@ -47,6 +47,12 @@ count : (n : Integer) -> (l : List Integer) -> Nat
 count n [] = 0
 count n (x :: xs) = (if n == x then 1 else 0) + count n xs
 
+countEq : (x : Integer, y : Integer) -> (xs : List Integer) -> (x = y) -> count y (x :: xs) = 1 + count y xs
+countEq x y xs prf = ?countEq
+
+countNeq : (x : Integer, y : Integer) -> (xs : List Integer) -> Not (x = y) -> count y (x :: xs) = count y s
+countNeq x y xs prf = ?countNeq
+
 natToInteger : Nat -> Integer
 natToInteger Z = 0
 natToInteger (S k) = 1 + natToInteger k

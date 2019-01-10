@@ -109,6 +109,12 @@ namespace TwoValidator
     Left prf  => rewrite prf in Left (rewrite (sym (plusMinus2Helper pA pB wA wB)) in Refl, Refl)
     Right prf => rewrite prf in Right (rewrite (sym (plusMinus2Helper' pA pB wA wB)) in Refl, Refl)
 
+  countJoin : (x : ProposerId) -> (n : Nat) -> (s : ElectionState) -> (prf : (if snd (incrementElect (fst (incrementElectMany n s))) == x then 1 else 0) = 1) -> count x (snd (joinApply (incrementElectMany n s))) = 1 + count x (snd (incrementElectMany n s))
+  countJoin x n s prf = ?countJoin
+
+  countJoin' : (x : ProposerId) -> (n : Nat) -> (s : ElectionState) -> (prf : (if snd (incrementElect (fst (incrementElectMany n s))) == x then 1 else 0) = 0) -> count x (snd (joinApply (incrementElectMany n s))) = 0 + count x (snd (incrementElectMany n s))
+  countJoin' x n s prf = ?countJoin'
+
   -- Prove the total change in priority difference over n calls of incrementElect.
   totalDiff : (idA : ProposerId) -> (idB : ProposerId) -> (wA : ProposerWeight) -> (wB : ProposerWeight) ->
     (pA : ProposerPriority) -> (pB: ProposerPriority) -> (n: Nat) ->
@@ -135,24 +141,43 @@ namespace TwoValidator
     let ((idA', wA', pA'), (idB', wB', pB')) = previousState
         ((nA, nB) ** (eq, cA, cB, diffEq)) = previous in
     case diffChange idA' idB' wA' wB' pA' pB' of
-      Left prfA => (
-        ((nA + 1, nB)) **
+      Left prfA =>
+        let proofEq = the ((if snd (incrementElect (fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB))))) == idA then 1 else 0) = 1) (?proofeq)
+            proofNeq = the ((if snd (incrementElect (fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB))))) == idB then 1 else 0) = 0) (?proofneq) in
+        (((nA + 1, nB)) **
         (rewrite plusCommutative (nA + 1) nB in rewrite plusCommutative nA 1 in rewrite eq in rewrite plusCommutative nA nB in rewrite plusSuccRightSucc nB nA in Refl,
-         ?totalDiffLeft3,
-         ?totalDiffLeft2,
+         rewrite (sym (plusSuccRightSucc nA 0)) in
+         rewrite cA in
+         rewrite countJoin idA k ((idA, wA, pA), (idB, wB, pB)) proofEq in
+         rewrite plusZeroRightNeutral (count idA (snd (incrementElectMany k ((idA, wA, pA), (idB, wB, pB))))) in
+         Refl,
+         rewrite cB in
+         rewrite countJoin' idB k ((idA, wA, pA), (idB, wB, pB)) proofNeq in
+         Refl,
          ?totalDiffLeft
         ))
-      Right prfB => (
-        ((nA, nB + 1)) **
+      Right prfB =>
+        let proofEq = the ((if snd (incrementElect (fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB))))) == idB then 1 else 0) = 1) (?proofeq)
+            proofNeq = the ((if snd (incrementElect (fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB))))) == idA then 1 else 0) = 0) (?proofneq) in
+        (((nA, nB + 1)) **
         (rewrite plusCommutative nA (nB + 1) in rewrite plusCommutative nB 1 in rewrite eq in rewrite plusCommutative nA nB in Refl,
-          ?totalDiffRight3,
-          ?totalDiffRight2,
+          rewrite cA in
+          rewrite countJoin' idA k ((idA, wA, pA), (idB, wB, pB)) proofNeq in
+          Refl,
+          rewrite (sym (plusSuccRightSucc nB 0)) in
+          rewrite cB in
+          rewrite countJoin idB k ((idA, wA, pA), (idB, wB, pB)) proofEq in
+          rewrite plusZeroRightNeutral (count idB (snd (incrementElectMany k ((idA, wA, pA), (idB, wB, pB))))) in
+          Refl,
           ?totalDiffRight
         ))
     where
       -- Inductive state.
       previousState : ElectionState
       previousState = fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))
+
+      previousEq : previousState = fst (incrementElectMany k ((idA, wA, pA), (idB, wB, pB)))
+      previousEq = Refl
 
       -- Inductive case.
       previous : (ns ** (k = fst ns + snd ns,
